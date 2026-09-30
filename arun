@@ -1,1 +1,1940 @@
+#include <iostream>
+#include <string>
+#include <iomanip>
+#include <limits>
+#include <algorithm>
+#include <queue>
+#include <stack>
+#include <vector>
 
+using namespace std;
+
+/* ============================================================
+   HOSPITAL MANAGEMENT SYSTEM
+   Data Structures Used:
+   1. Linked List  - Patients, Doctors, Medicines
+   2. Queue         - Appointments
+   3. Priority Queue- Emergency Patients
+   4. Stack         - Medical History
+   5. Array/Vector  - Rooms/Beds
+   6. Searching     - Linear Search
+   7. Sorting       - Bubble Sort
+   ============================================================ */
+
+// -------------------- Utility Functions --------------------
+
+void clearInput() {
+    cin.clear();
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+}
+
+int getInt(string message) {
+    int value;
+
+    while (true) {
+        cout << message;
+
+        if (cin >> value) {
+            clearInput();
+            return value;
+        }
+
+        cout << "Invalid input! Please enter a number.\n";
+        clearInput();
+    }
+}
+
+double getDouble(string message) {
+    double value;
+
+    while (true) {
+        cout << message;
+
+        if (cin >> value) {
+            clearInput();
+            return value;
+        }
+
+        cout << "Invalid input! Please enter a valid number.\n";
+        clearInput();
+    }
+}
+
+string getString(string message) {
+    string value;
+    cout << message;
+    getline(cin, value);
+    return value;
+}
+
+void pauseScreen() {
+    cout << "\nPress Enter to continue...";
+    cin.get();
+}
+
+void line() {
+    cout << "============================================================\n";
+}
+
+// ============================================================
+//                       PATIENT MODULE
+// ============================================================
+
+struct Patient {
+    int id;
+    string name;
+    int age;
+    string gender;
+    string phone;
+    string address;
+    string bloodGroup;
+    string disease;
+    string doctor;
+    bool admitted;
+
+    Patient* next;
+
+    Patient(int i, string n, int a, string g, string p,
+            string addr, string bg, string d, string doc)
+        : id(i), name(n), age(a), gender(g), phone(p),
+          address(addr), bloodGroup(bg), disease(d),
+          doctor(doc), admitted(false), next(nullptr) {}
+};
+
+class PatientList {
+private:
+    Patient* head;
+
+public:
+    PatientList() {
+        head = nullptr;
+    }
+
+    ~PatientList() {
+        Patient* current = head;
+
+        while (current != nullptr) {
+            Patient* temp = current;
+            current = current->next;
+            delete temp;
+        }
+    }
+
+    Patient* searchById(int id) {
+        Patient* current = head;
+
+        while (current != nullptr) {
+            if (current->id == id)
+                return current;
+
+            current = current->next;
+        }
+
+        return nullptr;
+    }
+
+    void addPatient() {
+        line();
+        cout << "                 REGISTER NEW PATIENT\n";
+        line();
+
+        int id = getInt("Patient ID: ");
+
+        if (searchById(id) != nullptr) {
+            cout << "Patient ID already exists!\n";
+            return;
+        }
+
+        string name = getString("Name: ");
+        int age = getInt("Age: ");
+        string gender = getString("Gender: ");
+        string phone = getString("Phone: ");
+        string address = getString("Address: ");
+        string blood = getString("Blood Group: ");
+        string disease = getString("Disease/Problem: ");
+        string doctor = getString("Assigned Doctor: ");
+
+        Patient* newPatient =
+            new Patient(id, name, age, gender, phone,
+                        address, blood, disease, doctor);
+
+        if (head == nullptr) {
+            head = newPatient;
+        } else {
+            Patient* current = head;
+
+            while (current->next != nullptr)
+                current = current->next;
+
+            current->next = newPatient;
+        }
+
+        cout << "\nPatient registered successfully!\n";
+    }
+
+    void displayPatient(Patient* p) {
+        if (p == nullptr)
+            return;
+
+        line();
+        cout << "Patient ID       : " << p->id << endl;
+        cout << "Name             : " << p->name << endl;
+        cout << "Age              : " << p->age << endl;
+        cout << "Gender           : " << p->gender << endl;
+        cout << "Phone            : " << p->phone << endl;
+        cout << "Address          : " << p->address << endl;
+        cout << "Blood Group      : " << p->bloodGroup << endl;
+        cout << "Disease          : " << p->disease << endl;
+        cout << "Doctor           : " << p->doctor << endl;
+        cout << "Admission Status : "
+             << (p->admitted ? "Admitted" : "Not Admitted") << endl;
+        line();
+    }
+
+    void displayAll() {
+        if (head == nullptr) {
+            cout << "No patient records found.\n";
+            return;
+        }
+
+        Patient* current = head;
+
+        cout << "\n";
+        line();
+        cout << left
+             << setw(8) << "ID"
+             << setw(20) << "Name"
+             << setw(6) << "Age"
+             << setw(15) << "Gender"
+             << setw(15) << "Blood"
+             << setw(20) << "Disease" << endl;
+        line();
+
+        while (current != nullptr) {
+            cout << left
+                 << setw(8) << current->id
+                 << setw(20) << current->name
+                 << setw(6) << current->age
+                 << setw(15) << current->gender
+                 << setw(15) << current->bloodGroup
+                 << setw(20) << current->disease
+                 << endl;
+
+            current = current->next;
+        }
+
+        line();
+    }
+
+    void searchPatient() {
+        int id = getInt("Enter Patient ID: ");
+
+        Patient* p = searchById(id);
+
+        if (p == nullptr)
+            cout << "Patient not found!\n";
+        else
+            displayPatient(p);
+    }
+
+    void updatePatient() {
+        int id = getInt("Enter Patient ID to update: ");
+
+        Patient* p = searchById(id);
+
+        if (p == nullptr) {
+            cout << "Patient not found!\n";
+            return;
+        }
+
+        cout << "\nCurrent details:\n";
+        displayPatient(p);
+
+        p->phone = getString("New Phone: ");
+        p->address = getString("New Address: ");
+        p->disease = getString("New Disease: ");
+        p->doctor = getString("New Doctor: ");
+
+        cout << "Patient information updated successfully!\n";
+    }
+
+    void deletePatient() {
+        int id = getInt("Enter Patient ID to delete: ");
+
+        Patient* current = head;
+        Patient* previous = nullptr;
+
+        while (current != nullptr && current->id != id) {
+            previous = current;
+            current = current->next;
+        }
+
+        if (current == nullptr) {
+            cout << "Patient not found!\n";
+            return;
+        }
+
+        if (previous == nullptr)
+            head = current->next;
+        else
+            previous->next = current->next;
+
+        delete current;
+
+        cout << "Patient deleted successfully!\n";
+    }
+
+    void admitPatient() {
+        int id = getInt("Enter Patient ID: ");
+
+        Patient* p = searchById(id);
+
+        if (p == nullptr) {
+            cout << "Patient not found!\n";
+            return;
+        }
+
+        p->admitted = true;
+        cout << "Patient marked as admitted.\n";
+    }
+
+    void dischargePatient() {
+        int id = getInt("Enter Patient ID: ");
+
+        Patient* p = searchById(id);
+
+        if (p == nullptr) {
+            cout << "Patient not found!\n";
+            return;
+        }
+
+        p->admitted = false;
+        cout << "Patient discharged successfully.\n";
+    }
+
+    int countPatients() {
+        int count = 0;
+        Patient* current = head;
+
+        while (current != nullptr) {
+            count++;
+            current = current->next;
+        }
+
+        return count;
+    }
+
+    void sortByAge() {
+        if (head == nullptr || head->next == nullptr) {
+            cout << "Not enough patients to sort.\n";
+            return;
+        }
+
+        bool swapped;
+
+        do {
+            swapped = false;
+            Patient* current = head;
+
+            while (current->next != nullptr) {
+                if (current->age > current->next->age) {
+                    swap(current->id, current->next->id);
+                    swap(current->name, current->next->name);
+                    swap(current->age, current->next->age);
+                    swap(current->gender, current->next->gender);
+                    swap(current->phone, current->next->phone);
+                    swap(current->address, current->next->address);
+                    swap(current->bloodGroup, current->next->bloodGroup);
+                    swap(current->disease, current->next->disease);
+                    swap(current->doctor, current->next->doctor);
+                    swap(current->admitted, current->next->admitted);
+
+                    swapped = true;
+                }
+
+                current = current->next;
+            }
+
+        } while (swapped);
+
+        cout << "Patients sorted by age successfully.\n";
+    }
+
+    Patient* getHead() {
+        return head;
+    }
+};
+
+// ============================================================
+//                       DOCTOR MODULE
+// ============================================================
+
+struct Doctor {
+    int id;
+    string name;
+    string specialization;
+    int experience;
+    string phone;
+    string status;
+
+    Doctor* next;
+
+    Doctor(int i, string n, string s, int e, string p)
+        : id(i), name(n), specialization(s),
+          experience(e), phone(p),
+          status("Available"), next(nullptr) {}
+};
+
+class DoctorList {
+private:
+    Doctor* head;
+
+public:
+    DoctorList() {
+        head = nullptr;
+    }
+
+    ~DoctorList() {
+        Doctor* current = head;
+
+        while (current != nullptr) {
+            Doctor* temp = current;
+            current = current->next;
+            delete temp;
+        }
+    }
+
+    Doctor* searchById(int id) {
+        Doctor* current = head;
+
+        while (current != nullptr) {
+            if (current->id == id)
+                return current;
+
+            current = current->next;
+        }
+
+        return nullptr;
+    }
+
+    void addDoctor() {
+        line();
+        cout << "                    ADD DOCTOR\n";
+        line();
+
+        int id = getInt("Doctor ID: ");
+
+        if (searchById(id) != nullptr) {
+            cout << "Doctor ID already exists!\n";
+            return;
+        }
+
+        string name = getString("Doctor Name: ");
+        string specialization = getString("Specialization: ");
+        int experience = getInt("Experience (years): ");
+        string phone = getString("Phone: ");
+
+        Doctor* newDoctor =
+            new Doctor(id, name, specialization,
+                       experience, phone);
+
+        if (head == nullptr) {
+            head = newDoctor;
+        } else {
+            Doctor* current = head;
+
+            while (current->next != nullptr)
+                current = current->next;
+
+            current->next = newDoctor;
+        }
+
+        cout << "Doctor added successfully!\n";
+    }
+
+    void displayAll() {
+        if (head == nullptr) {
+            cout << "No doctor records found.\n";
+            return;
+        }
+
+        line();
+        cout << left
+             << setw(8) << "ID"
+             << setw(20) << "Name"
+             << setw(20) << "Specialization"
+             << setw(12) << "Experience"
+             << setw(16) << "Phone"
+             << setw(15) << "Status" << endl;
+        line();
+
+        Doctor* current = head;
+
+        while (current != nullptr) {
+            cout << left
+                 << setw(8) << current->id
+                 << setw(20) << current->name
+                 << setw(20) << current->specialization
+                 << setw(12) << current->experience
+                 << setw(16) << current->phone
+                 << setw(15) << current->status
+                 << endl;
+
+            current = current->next;
+        }
+
+        line();
+    }
+
+    void searchDoctor() {
+        int id = getInt("Enter Doctor ID: ");
+
+        Doctor* d = searchById(id);
+
+        if (d == nullptr) {
+            cout << "Doctor not found!\n";
+            return;
+        }
+
+        line();
+        cout << "Doctor ID       : " << d->id << endl;
+        cout << "Name            : " << d->name << endl;
+        cout << "Specialization  : " << d->specialization << endl;
+        cout << "Experience      : " << d->experience << " years\n";
+        cout << "Phone           : " << d->phone << endl;
+        cout << "Status          : " << d->status << endl;
+        line();
+    }
+
+    int countDoctors() {
+        int count = 0;
+        Doctor* current = head;
+
+        while (current != nullptr) {
+            count++;
+            current = current->next;
+        }
+
+        return count;
+    }
+};
+
+// ============================================================
+//                    APPOINTMENT QUEUE
+// ============================================================
+
+struct Appointment {
+    int appointmentId;
+    int patientId;
+    int doctorId;
+    string date;
+    string time;
+    string status;
+};
+
+class AppointmentQueue {
+private:
+    queue<Appointment> q;
+    int nextId;
+
+public:
+    AppointmentQueue() {
+        nextId = 1;
+    }
+
+    void bookAppointment() {
+        Appointment a;
+
+        a.appointmentId = nextId++;
+
+        a.patientId = getInt("Patient ID: ");
+        a.doctorId = getInt("Doctor ID: ");
+        a.date = getString("Date (DD/MM/YYYY): ");
+        a.time = getString("Time: ");
+
+        a.status = "Waiting";
+
+        q.push(a);
+
+        cout << "\nAppointment booked successfully!\n";
+        cout << "Appointment ID: " << a.appointmentId << endl;
+    }
+
+    void viewAppointments() {
+        if (q.empty()) {
+            cout << "No appointments in queue.\n";
+            return;
+        }
+
+        queue<Appointment> temp = q;
+
+        line();
+        cout << left
+             << setw(8) << "ID"
+             << setw(12) << "Patient"
+             << setw(12) << "Doctor"
+             << setw(15) << "Date"
+             << setw(12) << "Time"
+             << setw(15) << "Status" << endl;
+        line();
+
+        while (!temp.empty()) {
+            Appointment a = temp.front();
+            temp.pop();
+
+            cout << left
+                 << setw(8) << a.appointmentId
+                 << setw(12) << a.patientId
+                 << setw(12) << a.doctorId
+                 << setw(15) << a.date
+                 << setw(12) << a.time
+                 << setw(15) << a.status << endl;
+        }
+
+        line();
+    }
+
+    void completeNextAppointment() {
+        if (q.empty()) {
+            cout << "No waiting appointments.\n";
+            return;
+        }
+
+        Appointment a = q.front();
+        q.pop();
+
+        cout << "\nAppointment completed.\n";
+        cout << "Appointment ID: " << a.appointmentId << endl;
+        cout << "Patient ID: " << a.patientId << endl;
+        cout << "Doctor ID: " << a.doctorId << endl;
+    }
+
+    int count() {
+        return static_cast<int>(q.size());
+    }
+};
+
+// ============================================================
+//                  EMERGENCY PRIORITY QUEUE
+// ============================================================
+
+struct EmergencyPatient {
+    int patientId;
+    string name;
+    int priority;
+    string condition;
+
+    bool operator<(const EmergencyPatient& other) const {
+        return priority > other.priority;
+    }
+};
+
+class EmergencyQueue {
+private:
+    priority_queue<EmergencyPatient> pq;
+
+public:
+    void addEmergencyPatient() {
+        EmergencyPatient e;
+
+        e.patientId = getInt("Patient ID: ");
+        e.name = getString("Patient Name: ");
+        e.condition = getString("Condition: ");
+
+        cout << "\nPriority Level:\n";
+        cout << "1. Critical\n";
+        cout << "2. Serious\n";
+        cout << "3. Normal\n";
+
+        e.priority = getInt("Enter priority: ");
+
+        if (e.priority < 1 || e.priority > 3) {
+            cout << "Invalid priority. Setting to 3.\n";
+            e.priority = 3;
+        }
+
+        pq.push(e);
+
+        cout << "Emergency patient added successfully!\n";
+    }
+
+    void viewQueue() {
+        if (pq.empty()) {
+            cout << "Emergency queue is empty.\n";
+            return;
+        }
+
+        priority_queue<EmergencyPatient> temp = pq;
+
+        line();
+        cout << left
+             << setw(10) << "Patient"
+             << setw(20) << "Name"
+             << setw(12) << "Priority"
+             << setw(25) << "Condition" << endl;
+        line();
+
+        while (!temp.empty()) {
+            EmergencyPatient e = temp.top();
+            temp.pop();
+
+            string priorityName;
+
+            if (e.priority == 1)
+                priorityName = "CRITICAL";
+            else if (e.priority == 2)
+                priorityName = "SERIOUS";
+            else
+                priorityName = "NORMAL";
+
+            cout << left
+                 << setw(10) << e.patientId
+                 << setw(20) << e.name
+                 << setw(12) << priorityName
+                 << setw(25) << e.condition
+                 << endl;
+        }
+
+        line();
+    }
+
+    void treatNextPatient() {
+        if (pq.empty()) {
+            cout << "No emergency patients.\n";
+            return;
+        }
+
+        EmergencyPatient e = pq.top();
+        pq.pop();
+
+        cout << "\nEmergency patient being treated:\n";
+        cout << "Patient ID : " << e.patientId << endl;
+        cout << "Name       : " << e.name << endl;
+        cout << "Condition  : " << e.condition << endl;
+    }
+
+    int count() {
+        return static_cast<int>(pq.size());
+    }
+};
+
+// ============================================================
+//                    PHARMACY MODULE
+// ============================================================
+
+struct Medicine {
+    int id;
+    string name;
+    string category;
+    double price;
+    int quantity;
+    string expiry;
+
+    Medicine* next;
+
+    Medicine(int i, string n, string c,
+             double p, int q, string e)
+        : id(i), name(n), category(c),
+          price(p), quantity(q), expiry(e),
+          next(nullptr) {}
+};
+
+class Pharmacy {
+private:
+    Medicine* head;
+
+public:
+    Pharmacy() {
+        head = nullptr;
+    }
+
+    ~Pharmacy() {
+        Medicine* current = head;
+
+        while (current != nullptr) {
+            Medicine* temp = current;
+            current = current->next;
+            delete temp;
+        }
+    }
+
+    Medicine* searchMedicine(int id) {
+        Medicine* current = head;
+
+        while (current != nullptr) {
+            if (current->id == id)
+                return current;
+
+            current = current->next;
+        }
+
+        return nullptr;
+    }
+
+    void addMedicine() {
+        int id = getInt("Medicine ID: ");
+
+        if (searchMedicine(id) != nullptr) {
+            cout << "Medicine ID already exists!\n";
+            return;
+        }
+
+        string name = getString("Medicine Name: ");
+        string category = getString("Category: ");
+        double price = getDouble("Price: ");
+        int quantity = getInt("Quantity: ");
+        string expiry = getString("Expiry Date: ");
+
+        Medicine* m =
+            new Medicine(id, name, category,
+                         price, quantity, expiry);
+
+        if (head == nullptr) {
+            head = m;
+        } else {
+            Medicine* current = head;
+
+            while (current->next != nullptr)
+                current = current->next;
+
+            current->next = m;
+        }
+
+        cout << "Medicine added successfully!\n";
+    }
+
+    void displayMedicines() {
+        if (head == nullptr) {
+            cout << "No medicines available.\n";
+            return;
+        }
+
+        line();
+
+        cout << left
+             << setw(8) << "ID"
+             << setw(20) << "Medicine"
+             << setw(18) << "Category"
+             << setw(12) << "Price"
+             << setw(10) << "Stock"
+             << setw(15) << "Expiry" << endl;
+
+        line();
+
+        Medicine* current = head;
+
+        while (current != nullptr) {
+            cout << left
+                 << setw(8) << current->id
+                 << setw(20) << current->name
+                 << setw(18) << current->category
+                 << setw(12) << fixed << setprecision(2)
+                 << current->price
+                 << setw(10) << current->quantity
+                 << setw(15) << current->expiry
+                 << endl;
+
+            current = current->next;
+        }
+
+        line();
+    }
+
+    void search() {
+        int id = getInt("Medicine ID: ");
+
+        Medicine* m = searchMedicine(id);
+
+        if (m == nullptr) {
+            cout << "Medicine not found!\n";
+            return;
+        }
+
+        cout << "\nMedicine Found\n";
+        line();
+        cout << "ID       : " << m->id << endl;
+        cout << "Name     : " << m->name << endl;
+        cout << "Category : " << m->category << endl;
+        cout << "Price    : " << m->price << endl;
+        cout << "Stock    : " << m->quantity << endl;
+        cout << "Expiry   : " << m->expiry << endl;
+        line();
+    }
+
+    void updateStock() {
+        int id = getInt("Medicine ID: ");
+
+        Medicine* m = searchMedicine(id);
+
+        if (m == nullptr) {
+            cout << "Medicine not found!\n";
+            return;
+        }
+
+        int quantity = getInt("New quantity: ");
+
+        if (quantity < 0) {
+            cout << "Invalid quantity!\n";
+            return;
+        }
+
+        m->quantity = quantity;
+
+        cout << "Stock updated successfully!\n";
+    }
+
+    void sellMedicine() {
+        int id = getInt("Medicine ID: ");
+
+        Medicine* m = searchMedicine(id);
+
+        if (m == nullptr) {
+            cout << "Medicine not found!\n";
+            return;
+        }
+
+        int qty = getInt("Quantity to sell: ");
+
+        if (qty <= 0 || qty > m->quantity) {
+            cout << "Invalid quantity / insufficient stock!\n";
+            return;
+        }
+
+        double total = qty * m->price;
+
+        m->quantity -= qty;
+
+        cout << fixed << setprecision(2);
+        cout << "Medicine sold successfully.\n";
+        cout << "Total Amount: Rs. " << total << endl;
+        cout << "Remaining Stock: " << m->quantity << endl;
+    }
+
+    void lowStock() {
+        if (head == nullptr) {
+            cout << "No medicines available.\n";
+            return;
+        }
+
+        Medicine* current = head;
+        bool found = false;
+
+        line();
+        cout << "LOW STOCK MEDICINES\n";
+        line();
+
+        while (current != nullptr) {
+            if (current->quantity <= 10) {
+                cout << "ID: " << current->id
+                     << " | " << current->name
+                     << " | Stock: " << current->quantity
+                     << endl;
+
+                found = true;
+            }
+
+            current = current->next;
+        }
+
+        if (!found)
+            cout << "No low-stock medicines.\n";
+
+        line();
+    }
+
+    int count() {
+        int count = 0;
+        Medicine* current = head;
+
+        while (current != nullptr) {
+            count++;
+            current = current->next;
+        }
+
+        return count;
+    }
+};
+
+// ============================================================
+//                     ROOM / BED MODULE
+// ============================================================
+
+struct Room {
+    int roomNumber;
+    bool occupied;
+    int patientId;
+};
+
+class RoomManager {
+private:
+    static const int TOTAL_ROOMS = 20;
+    Room rooms[TOTAL_ROOMS];
+
+public:
+    RoomManager() {
+        for (int i = 0; i < TOTAL_ROOMS; i++) {
+            rooms[i].roomNumber = 101 + i;
+            rooms[i].occupied = false;
+            rooms[i].patientId = -1;
+        }
+    }
+
+    void viewRooms() {
+        line();
+        cout << "                    ROOM STATUS\n";
+        line();
+
+        for (int i = 0; i < TOTAL_ROOMS; i++) {
+            cout << "Room " << rooms[i].roomNumber
+                 << " : ";
+
+            if (rooms[i].occupied)
+                cout << "Occupied (Patient "
+                     << rooms[i].patientId << ")";
+            else
+                cout << "Available";
+
+            cout << endl;
+        }
+
+        line();
+    }
+
+    void admitPatient() {
+        int patientId = getInt("Patient ID: ");
+        int roomNumber = getInt("Room Number: ");
+
+        for (int i = 0; i < TOTAL_ROOMS; i++) {
+
+            if (rooms[i].roomNumber == roomNumber) {
+
+                if (rooms[i].occupied) {
+                    cout << "Room already occupied!\n";
+                    return;
+                }
+
+                rooms[i].occupied = true;
+                rooms[i].patientId = patientId;
+
+                cout << "Patient admitted to Room "
+                     << roomNumber << ".\n";
+
+                return;
+            }
+        }
+
+        cout << "Room not found!\n";
+    }
+
+    void dischargePatient() {
+        int roomNumber = getInt("Room Number: ");
+
+        for (int i = 0; i < TOTAL_ROOMS; i++) {
+
+            if (rooms[i].roomNumber == roomNumber) {
+
+                if (!rooms[i].occupied) {
+                    cout << "Room is already available.\n";
+                    return;
+                }
+
+                rooms[i].occupied = false;
+                rooms[i].patientId = -1;
+
+                cout << "Patient discharged from room.\n";
+
+                return;
+            }
+        }
+
+        cout << "Room not found!\n";
+    }
+
+    int availableBeds() {
+        int count = 0;
+
+        for (int i = 0; i < TOTAL_ROOMS; i++) {
+            if (!rooms[i].occupied)
+                count++;
+        }
+
+        return count;
+    }
+
+    int occupiedBeds() {
+        return TOTAL_ROOMS - availableBeds();
+    }
+};
+
+// ============================================================
+//                     MEDICAL RECORD / STACK
+// ============================================================
+
+struct MedicalRecord {
+    int patientId;
+    string date;
+    string diagnosis;
+    string prescription;
+};
+
+class MedicalHistory {
+private:
+    stack<MedicalRecord> history;
+
+public:
+    void addRecord() {
+        MedicalRecord r;
+
+        r.patientId = getInt("Patient ID: ");
+        r.date = getString("Date: ");
+        r.diagnosis = getString("Diagnosis: ");
+        r.prescription = getString("Prescription: ");
+
+        history.push(r);
+
+        cout << "Medical record added successfully!\n";
+    }
+
+    void viewHistory() {
+        if (history.empty()) {
+            cout << "No medical records found.\n";
+            return;
+        }
+
+        int patientId = getInt("Enter Patient ID: ");
+
+        stack<MedicalRecord> temp = history;
+
+        bool found = false;
+
+        while (!temp.empty()) {
+            MedicalRecord r = temp.top();
+            temp.pop();
+
+            if (r.patientId == patientId) {
+                line();
+                cout << "Patient ID    : " << r.patientId << endl;
+                cout << "Date          : " << r.date << endl;
+                cout << "Diagnosis     : " << r.diagnosis << endl;
+                cout << "Prescription  : " << r.prescription << endl;
+                line();
+
+                found = true;
+            }
+        }
+
+        if (!found)
+            cout << "No history found for this patient.\n";
+    }
+
+    int count() {
+        return static_cast<int>(history.size());
+    }
+};
+
+// ============================================================
+//                         BILLING
+// ============================================================
+
+struct Bill {
+    int billId;
+    int patientId;
+    double roomCharges;
+    double doctorCharges;
+    double medicineCharges;
+    double testCharges;
+    double otherCharges;
+    double total;
+    string paymentStatus;
+};
+
+class BillingSystem {
+private:
+    vector<Bill> bills;
+    int nextBillId;
+
+public:
+    BillingSystem() {
+        nextBillId = 1001;
+    }
+
+    void generateBill() {
+        Bill b;
+
+        b.billId = nextBillId++;
+
+        b.patientId = getInt("Patient ID: ");
+
+        b.roomCharges = getDouble("Room Charges: Rs. ");
+        b.doctorCharges = getDouble("Doctor Charges: Rs. ");
+        b.medicineCharges = getDouble("Medicine Charges: Rs. ");
+        b.testCharges = getDouble("Test Charges: Rs. ");
+        b.otherCharges = getDouble("Other Charges: Rs. ");
+
+        b.total =
+            b.roomCharges +
+            b.doctorCharges +
+            b.medicineCharges +
+            b.testCharges +
+            b.otherCharges;
+
+        b.paymentStatus = "Pending";
+
+        bills.push_back(b);
+
+        cout << "\nBill generated successfully!\n";
+        cout << "Bill ID: " << b.billId << endl;
+        cout << fixed << setprecision(2);
+        cout << "Total: Rs. " << b.total << endl;
+    }
+
+    void viewBill() {
+        int id = getInt("Enter Bill ID: ");
+
+        for (const Bill& b : bills) {
+
+            if (b.billId == id) {
+
+                line();
+                cout << "                    BILL\n";
+                line();
+
+                cout << "Bill ID          : " << b.billId << endl;
+                cout << "Patient ID       : " << b.patientId << endl;
+
+                cout << fixed << setprecision(2);
+
+                cout << "Room Charges     : Rs. "
+                     << b.roomCharges << endl;
+
+                cout << "Doctor Charges   : Rs. "
+                     << b.doctorCharges << endl;
+
+                cout << "Medicine Charges : Rs. "
+                     << b.medicineCharges << endl;
+
+                cout << "Test Charges     : Rs. "
+                     << b.testCharges << endl;
+
+                cout << "Other Charges    : Rs. "
+                     << b.otherCharges << endl;
+
+                cout << "-----------------------------\n";
+
+                cout << "TOTAL            : Rs. "
+                     << b.total << endl;
+
+                cout << "Payment Status   : "
+                     << b.paymentStatus << endl;
+
+                line();
+
+                return;
+            }
+        }
+
+        cout << "Bill not found!\n";
+    }
+
+    void payment() {
+        int id = getInt("Enter Bill ID: ");
+
+        for (Bill& b : bills) {
+
+            if (b.billId == id) {
+
+                if (b.paymentStatus == "Paid") {
+                    cout << "Bill is already paid.\n";
+                    return;
+                }
+
+                b.paymentStatus = "Paid";
+
+                cout << "Payment completed successfully.\n";
+                return;
+            }
+        }
+
+        cout << "Bill not found!\n";
+    }
+
+    double totalRevenue() {
+        double revenue = 0;
+
+        for (const Bill& b : bills) {
+            if (b.paymentStatus == "Paid")
+                revenue += b.total;
+        }
+
+        return revenue;
+    }
+
+    int countBills() {
+        return static_cast<int>(bills.size());
+    }
+};
+
+// ============================================================
+//                    SEARCH & SORT MENU
+// ============================================================
+
+void searchSortMenu(PatientList& patients) {
+
+    while (true) {
+
+        line();
+        cout << "                 SEARCH & SORT\n";
+        line();
+
+        cout << "1. Search Patient by ID\n";
+        cout << "2. Sort Patients by Age\n";
+        cout << "3. Display Patients\n";
+        cout << "0. Back\n";
+
+        int choice = getInt("Enter choice: ");
+
+        switch (choice) {
+
+        case 1:
+            patients.searchPatient();
+            pauseScreen();
+            break;
+
+        case 2:
+            patients.sortByAge();
+            pauseScreen();
+            break;
+
+        case 3:
+            patients.displayAll();
+            pauseScreen();
+            break;
+
+        case 0:
+            return;
+
+        default:
+            cout << "Invalid choice!\n";
+        }
+    }
+}
+
+// ============================================================
+//                    PATIENT MENU
+// ============================================================
+
+void patientMenu(PatientList& patients) {
+
+    while (true) {
+
+        line();
+        cout << "                 PATIENT MANAGEMENT\n";
+        line();
+
+        cout << "1. Register New Patient\n";
+        cout << "2. View All Patients\n";
+        cout << "3. Search Patient\n";
+        cout << "4. Update Patient\n";
+        cout << "5. Delete Patient\n";
+        cout << "6. Admit Patient\n";
+        cout << "7. Discharge Patient\n";
+        cout << "0. Back\n";
+
+        int choice = getInt("Enter choice: ");
+
+        switch (choice) {
+
+        case 1:
+            patients.addPatient();
+            pauseScreen();
+            break;
+
+        case 2:
+            patients.displayAll();
+            pauseScreen();
+            break;
+
+        case 3:
+            patients.searchPatient();
+            pauseScreen();
+            break;
+
+        case 4:
+            patients.updatePatient();
+            pauseScreen();
+            break;
+
+        case 5:
+            patients.deletePatient();
+            pauseScreen();
+            break;
+
+        case 6:
+            patients.admitPatient();
+            pauseScreen();
+            break;
+
+        case 7:
+            patients.dischargePatient();
+            pauseScreen();
+            break;
+
+        case 0:
+            return;
+
+        default:
+            cout << "Invalid choice!\n";
+        }
+    }
+}
+
+// ============================================================
+//                    DOCTOR MENU
+// ============================================================
+
+void doctorMenu(DoctorList& doctors) {
+
+    while (true) {
+
+        line();
+        cout << "                 DOCTOR MANAGEMENT\n";
+        line();
+
+        cout << "1. Add Doctor\n";
+        cout << "2. View Doctors\n";
+        cout << "3. Search Doctor\n";
+        cout << "0. Back\n";
+
+        int choice = getInt("Enter choice: ");
+
+        switch (choice) {
+
+        case 1:
+            doctors.addDoctor();
+            pauseScreen();
+            break;
+
+        case 2:
+            doctors.displayAll();
+            pauseScreen();
+            break;
+
+        case 3:
+            doctors.searchDoctor();
+            pauseScreen();
+            break;
+
+        case 0:
+            return;
+
+        default:
+            cout << "Invalid choice!\n";
+        }
+    }
+}
+
+// ============================================================
+//                  APPOINTMENT MENU
+// ============================================================
+
+void appointmentMenu(AppointmentQueue& appointments) {
+
+    while (true) {
+
+        line();
+        cout << "                APPOINTMENT MANAGEMENT\n";
+        line();
+
+        cout << "1. Book Appointment\n";
+        cout << "2. View Appointments\n";
+        cout << "3. Complete Next Appointment\n";
+        cout << "0. Back\n";
+
+        int choice = getInt("Enter choice: ");
+
+        switch (choice) {
+
+        case 1:
+            appointments.bookAppointment();
+            pauseScreen();
+            break;
+
+        case 2:
+            appointments.viewAppointments();
+            pauseScreen();
+            break;
+
+        case 3:
+            appointments.completeNextAppointment();
+            pauseScreen();
+            break;
+
+        case 0:
+            return;
+
+        default:
+            cout << "Invalid choice!\n";
+        }
+    }
+}
+
+// ============================================================
+//                  EMERGENCY MENU
+// ============================================================
+
+void emergencyMenu(EmergencyQueue& emergency) {
+
+    while (true) {
+
+        line();
+        cout << "                 EMERGENCY MANAGEMENT\n";
+        line();
+
+        cout << "1. Add Emergency Patient\n";
+        cout << "2. View Emergency Queue\n";
+        cout << "3. Treat Next Patient\n";
+        cout << "0. Back\n";
+
+        int choice = getInt("Enter choice: ");
+
+        switch (choice) {
+
+        case 1:
+            emergency.addEmergencyPatient();
+            pauseScreen();
+            break;
+
+        case 2:
+            emergency.viewQueue();
+            pauseScreen();
+            break;
+
+        case 3:
+            emergency.treatNextPatient();
+            pauseScreen();
+            break;
+
+        case 0:
+            return;
+
+        default:
+            cout << "Invalid choice!\n";
+        }
+    }
+}
+
+// ============================================================
+//                    PHARMACY MENU
+// ============================================================
+
+void pharmacyMenu(Pharmacy& pharmacy) {
+
+    while (true) {
+
+        line();
+        cout << "                 PHARMACY MANAGEMENT\n";
+        line();
+
+        cout << "1. Add Medicine\n";
+        cout << "2. View Medicines\n";
+        cout << "3. Search Medicine\n";
+        cout << "4. Update Stock\n";
+        cout << "5. Sell Medicine\n";
+        cout << "6. Low Stock Medicines\n";
+        cout << "0. Back\n";
+
+        int choice = getInt("Enter choice: ");
+
+        switch (choice) {
+
+        case 1:
+            pharmacy.addMedicine();
+            pauseScreen();
+            break;
+
+        case 2:
+            pharmacy.displayMedicines();
+            pauseScreen();
+            break;
+
+        case 3:
+            pharmacy.search();
+            pauseScreen();
+            break;
+
+        case 4:
+            pharmacy.updateStock();
+            pauseScreen();
+            break;
+
+        case 5:
+            pharmacy.sellMedicine();
+            pauseScreen();
+            break;
+
+        case 6:
+            pharmacy.lowStock();
+            pauseScreen();
+            break;
+
+        case 0:
+            return;
+
+        default:
+            cout << "Invalid choice!\n";
+        }
+    }
+}
+
+// ============================================================
+//                     ROOM MENU
+// ============================================================
+
+void roomMenu(RoomManager& rooms) {
+
+    while (true) {
+
+        line();
+        cout << "                 ROOM & BED MANAGEMENT\n";
+        line();
+
+        cout << "1. View Rooms\n";
+        cout << "2. Admit Patient to Room\n";
+        cout << "3. Discharge Patient from Room\n";
+        cout << "4. Available Beds\n";
+        cout << "5. Occupied Beds\n";
+        cout << "0. Back\n";
+
+        int choice = getInt("Enter choice: ");
+
+        switch (choice) {
+
+        case 1:
+            rooms.viewRooms();
+            pauseScreen();
+            break;
+
+        case 2:
+            rooms.admitPatient();
+            pauseScreen();
+            break;
+
+        case 3:
+            rooms.dischargePatient();
+            pauseScreen();
+            break;
+
+        case 4:
+            cout << "Available Beds: "
+                 << rooms.availableBeds() << endl;
+            pauseScreen();
+            break;
+
+        case 5:
+            cout << "Occupied Beds: "
+                 << rooms.occupiedBeds() << endl;
+            pauseScreen();
+            break;
+
+        case 0:
+            return;
+
+        default:
+            cout << "Invalid choice!\n";
+        }
+    }
+}
+
+// ============================================================
+//                    MEDICAL RECORD MENU
+// ============================================================
+
+void medicalMenu(MedicalHistory& history) {
+
+    while (true) {
+
+        line();
+        cout << "                  MEDICAL RECORDS\n";
+        line();
+
+        cout << "1. Add Medical Record\n";
+        cout << "2. View Patient History\n";
+        cout << "0. Back\n";
+
+        int choice = getInt("Enter choice: ");
+
+        switch (choice) {
+
+        case 1:
+            history.addRecord();
+            pauseScreen();
+            break;
+
+        case 2:
+            history.viewHistory();
+            pauseScreen();
+            break;
+
+        case 0:
+            return;
+
+        default:
+            cout << "Invalid choice!\n";
+        }
+    }
+}
+
+// ============================================================
+//                       BILLING MENU
+// ============================================================
+
+void billingMenu(BillingSystem& billing) {
+
+    while (true) {
+
+        line();
+        cout << "                   BILLING MANAGEMENT\n";
+        line();
+
+        cout << "1. Generate Bill\n";
+        cout << "2. View Bill\n";
+        cout << "3. Make Payment\n";
+        cout << "0. Back\n";
+
+        int choice = getInt("Enter choice: ");
+
+        switch (choice) {
+
+        case 1:
+            billing.generateBill();
+            pauseScreen();
+            break;
+
+        case 2:
+            billing.viewBill();
+            pauseScreen();
+            break;
+
+        case 3:
+            billing.payment();
+            pauseScreen();
+            break;
+
+        case 0:
+            return;
+
+        default:
+            cout << "Invalid choice!\n";
+        }
+    }
+}
+
+// ============================================================
+//                         REPORTS
+// ============================================================
+
+void reportsMenu(
+    PatientList& patients,
+    DoctorList& doctors,
+    AppointmentQueue& appointments,
+    EmergencyQueue& emergency,
+    Pharmacy& pharmacy,
+    RoomManager& rooms,
+    MedicalHistory& history,
+    BillingSystem& billing
+) {
+
+    while (true) {
+
+        line();
+        cout << "                    HOSPITAL REPORTS\n";
+        line();
+
+        cout << "1. Total Patients\n";
+        cout << "2. Total Doctors\n";
+        cout << "3. Waiting Appointments\n";
+        cout << "4. Emergency Patients\n";
+        cout << "5. Available Beds\n";
+        cout << "6. Occupied Beds\n";
+        cout << "7. Total Medicines\n";
+        cout << "8. Medical Records\n";
+        cout << "9. Total Bills\n";
+        cout << "10. Paid Revenue\n";
+        cout << "0. Back\n";
+
+        int choice = getInt("Enter choice: ");
+
+        switch (choice) {
+
+        case 1:
+            cout << "Total Patients: "
+                 << patients.countPatients() << endl;
+            pauseScreen();
+            break;
+
+        case 2:
+            cout << "Total Doctors: "
+                 << doctors.countDoctors() << endl;
+            pauseScreen();
+            break;
+
+        case 3:
+            cout << "Waiting Appointments: "
+                 << appointments.count() << endl;
+            pauseScreen();
+            break;
+
+        case 4:
+            cout << "Emergency Patients: "
+                 << emergency.count() << endl;
+            pauseScreen();
+            break;
+
+        case 5:
+            cout << "Available Beds: "
+                 << rooms.availableBeds() << endl;
+            pauseScreen();
+            break;
+
+        case 6:
+            cout << "Occupied Beds: "
+                 << rooms.occupiedBeds() << endl;
+            pauseScreen();
+            break;
+
+        case 7:
+            cout << "Total Medicines: "
+                 << pharmacy.count() << endl;
+            pauseScreen();
+            break;
+
+        case 8:
+            cout << "Medical Records: "
+                 << history.count() << endl;
+            pauseScreen();
+            break;
+
+        case 9:
+            cout << "Total Bills: "
+                 << billing.countBills() << endl;
+            pauseScreen();
+            break;
+
+        case 10:
+            cout << fixed << setprecision(2);
+            cout << "Paid Revenue: Rs. "
+                 << billing.totalRevenue() << endl;
+            pauseScreen();
+            break;
+
+        case 0:
+            return;
+
+        default:
+            cout << "Invalid choice!\n";
+        }
+    }
+}
+
+// ============================================================
+//                     MAIN DASHBOARD
+// ============================================================
+
+int main() {
+
+    PatientList patients;
+    DoctorList doctors;
+    AppointmentQueue appointments;
+    EmergencyQueue emergency;
+    Pharmacy pharmacy;
+    RoomManager rooms;
+    MedicalHistory history;
+    BillingSystem billing;
+
+    while (true) {
+
+        cout << "\n\n";
+
+        line();
+        cout << "              HOSPITAL MANAGEMENT SYSTEM\n";
+        line();
+
+        cout << "1.  Patient Management\n";
+        cout << "2.  Doctor Management\n";
+        cout << "3.  Appointment Management\n";
+        cout << "4.  Emergency Management\n";
+        cout << "5.  Pharmacy Management\n";
+        cout << "6.  Room / Bed Management\n";
+        cout << "7.  Billing Management\n";
+        cout << "8.  Medical Records\n";
+        cout << "9.  Search & Sort\n";
+        cout << "10. Reports\n";
+        cout << "0.  Exit\n";
+
+        line();
+
+        int choice = getInt("Enter your choice: ");
+
+        switch (choice) {
+
+        case 1:
+            patientMenu(patients);
+            break;
+
+        case 2:
+            doctorMenu(doctors);
+            break;
+
+        case 3:
+            appointmentMenu(appointments);
+            break;
+
+        case 4:
+            emergencyMenu(emergency);
+            break;
+
+        case 5:
+            pharmacyMenu(pharmacy);
+            break;
+
+        case 6:
+            roomMenu(rooms);
+            break;
+
+        case 7:
+            billingMenu(billing);
+            break;
+
+        case 8:
+            medicalMenu(history);
+            break;
+
+        case 9:
+            searchSortMenu(patients);
+            break;
+
+        case 10:
+            reportsMenu(
+                patients,
+                doctors,
+                appointments,
+                emergency,
+                pharmacy,
+                rooms,
+                history,
+                billing
+            );
+            break;
+
+        case 0:
+            cout << "\nThank you for using Hospital Management System!\n";
+            cout << "Program terminated successfully.\n";
+            return 0;
+
+        default:
+            cout << "Invalid choice! Please try again.\n";
+        }
+    }
+
+    return 0;
+}
